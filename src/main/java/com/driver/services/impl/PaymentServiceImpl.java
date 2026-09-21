@@ -21,33 +21,40 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public Payment pay(Integer reservationId, int amountSent, String mode) throws Exception {
         Optional<Reservation> oR = reservationRepository2.findById(reservationId);
-        if(!oR.isPresent()){
+        if (!oR.isPresent()) {
             throw new RuntimeException("reservation does not exist");
-
         }
+
         Reservation r = oR.get();
         PaymentMode pm;
-        if(mode.equalsIgnoreCase("cash")){
+        if (mode == null) {
+            throw new RuntimeException("Payment mode not detected");
+        }
+        if (mode.equalsIgnoreCase("cash")) {
             pm = PaymentMode.CASH;
         } else if (mode.equalsIgnoreCase("card")) {
             pm = PaymentMode.CARD;
-        }else if (mode.equalsIgnoreCase("upi")) {
+        } else if (mode.equalsIgnoreCase("upi")) {
             pm = PaymentMode.UPI;
-        }else{
-            throw new RuntimeException("no valid type of payment");
+        } else {
+            throw new RuntimeException("Payment mode not detected");
         }
+
         int needed = r.getNumberOfHours() * r.getSpot().getPricePerHour();
-        if(needed > amountSent){
-            throw new RuntimeException("not sufficient amount");
+        if (needed > amountSent) {
+            throw new RuntimeException("Insufficient Amount");
         }
+
         r.getSpot().setOccupied(true);
         Payment p = new Payment();
         p.setPaymentCompleted(true);
         p.setReservation(r);
         p.setPaymentMode(pm);
         r.setPayment(p);
-        reservationRepository2.save(r);
 
-        return null;
+        reservationRepository2.save(r);
+        paymentRepository2.save(p);
+
+        return p;
     }
 }
